@@ -1,0 +1,88 @@
+package mianshi;
+
+import java.util.Scanner;
+
+public class cjdd {
+
+	private static int[][] t = new int[10][10];	//作业i的第j道工序花费的时间
+	private static int[][] p = new int[10][10];	//作业i的第j道工序在哪个机器上运作
+	private static int[] num = new int[10];   //作业i共有num[i]道工序
+	private static int[] m = new int[10];		//第i 个机器花费的总时间
+	private static int[] c = new int[10];		//用于判断机器相互之间是否会有作业时间冲突
+	private static int[] cur = new int[10];	//代表作业i进行到了cur[i]道工序
+	private static int sum;	//所有作业的总工序数量
+	private static int s;		//共有s个机器
+	private static int n;		//共有n个作业
+	private static int re;		//作业最短时间
+	private static int[] ans = new int[100];	//作业执行的顺序（先按照作业之后按照此作业的工序进行，例如：3213，则为作业3的工序1-> 作业2的工序1-> 作业1的工序1-> 作业3的工序2以此执行）
+
+	public static void main(String[] args) {
+		Scanner sc = new Scanner(System.in);	//输入函数
+		n = sc.nextInt();	//输入有n个作业
+		s = sc.nextInt();	//输入有s个机器
+		for(int i = 1; i<=n; i++) {
+			num[i] = sc.nextInt();		//输入作业i上有几道工序
+			sum += num[i];	//将所有作业的的工序数量加和
+			for(int j = 1; j<=num[i]; j++) {
+				p[i][j] = sc.nextInt();		//输入作业i的第j道工序在哪个机器上运作
+				t[i][j] = sc.nextInt();		//输入作业i的第j道工序花费的时间
+			}
+		}
+		for(int i=0; i<10; i++) {	//初始化m，cur，c三个数组
+			m[i] = 0;
+			cur[i] = 0;
+			c[i] = 0;
+		}
+		re = 100000;	//re调到比较大的数值
+		dfs(0);		//执行dfs函数
+		System.out.printf("%d\n",re);	//输出最短时间
+	}
+
+	private static void dfs(int cnt){
+		int maxn = 0;	//当前所有作业完成的最终时间
+		for(int i=1; i<=s; i++){	//当前所有作业完成的最终时间实现
+			maxn = Math.max(maxn, m[i]);
+		}
+		if(maxn > re) {	//若当前作业完成的最终时间比当前所得其他方法最短时间大，则将此排序舍弃
+			return;
+		}
+		if(cnt == sum) {	//当cnt执行完所有工序以后进行工序的顺序的输出和最短时间的赋值
+			for(int i = 1; i<=cnt; i++) {
+				System.out.printf("%d", ans[i]);
+			}
+			System.out.println();
+			re = Math.min(re, maxn);
+			return;
+		} else {
+			for(int i = 1; i <= n; i++) {
+				if(cur[i] == num[i]) {	//作业i已经执行完所有工序，开始下一个作业
+					continue;
+				} else {
+					int x=cur[i];	//x = 作业i执行到了cur[i]道工序
+					cur[i]++;	//作业i执行完当前工序，工序+1
+					int y=m[p[i][cur[i]]];	//y = 作业i执行到cur[i]道工序时所在机器花费的总时间
+					int z=c[i];	//
+					/*
+					 * 此判断用意：用于判断作业工作i分不同阶段工序时机器相互之间的时间冲突问题，并解决冲突问题
+					 * */
+					if(m[p[i][cur[i]]]<=c[i]) {
+	                    m[p[i][cur[i]]]=c[i]+t[i][cur[i]];
+	                } else {
+	                    m[p[i][cur[i]]]+=t[i][cur[i]]; //作业i执行到cur[i]道工序时所在机器花费的总时间 += 当前作业i执行cur[i]工序时所用时间
+	                }
+					c[i]=m[p[i][cur[i]]];
+					ans[cnt+1]=i;
+					/*
+					 * 此递归方法为重点，意义：从最后一个作业调度进行排序，进一步进行时间上的优化
+					 * 详细解决方法看输出的顺序排序！
+					 */
+					dfs(cnt+1);	//递归执行此函数
+					c[i]=z;	//保存作业i执行到的前一个工序阶段的临时总时间
+	                cur[i]=x;	//保存作业i执行到的前一个工序阶段
+	                m[p[i][cur[i]+1]]=y;	//保存作业i执行前一道工序时所在机器花费的总时间
+				}
+			}
+		}
+	}
+}
+
